@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import * as controller from '../controllers/user.controller';
+import { UserMiddleware } from '../middlewares';
 
 export const user = Router();
+const userMiddleware = new UserMiddleware();
 
-user.post('/signup', controller.signup);
-user.post('/login', controller.login);
-user.post('/refresh', controller.refresh);
-user.post('/validate', controller.validate);
+
+// user.post('/refresh', controller.refresh);
+// user.post('/validate', controller.validate);
+user.use(userMiddleware.hasAnyRole(['superadmin', 'admin']))
+user.post('/add-new-user/:id', controller.addNewUser())
+user.get('/', controller.getUser());

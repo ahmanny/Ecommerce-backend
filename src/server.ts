@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import morgan from 'morgan';
 import routes from './routes';
 import type { TServerConfig } from './types';
+import { AuthService } from './services/auth.service';
 
 export class InitServer {
     server: Express;
@@ -33,11 +34,11 @@ export class InitServer {
         this.server.use(express.urlencoded({ extended: false }));
 
         // Setup routes
-        this.server.use('/', routes);
+        this.server.use('/v1', routes);
 
         // Create 404 error if requested route is not defined
         this.server.use((req: Request, res: Response, next: NextFunction) => {
-            next(createError(404));
+            res.status(404).send("Route not found")
         });
     }
 
@@ -47,6 +48,7 @@ export class InitServer {
 
         try {
             await this.database.connect(process.env.DB_URL!);
+            await AuthService.create_Superadmin();
             this.server.listen(port, () => console.log(`[server]: server is running at ${host}:${port}`));
         } catch (error) {
             console.error(error);
