@@ -8,6 +8,5 @@ const userMiddleware = new UserMiddleware();
 
 // user.post('/refresh', controller.refresh);
 // user.post('/validate', controller.validate);
-user.use(userMiddleware.hasAnyRole(['superadmin', 'admin']))
-user.post('/add-new-user/:id', controller.addNewUser())
-user.get('/', controller.getUser());
+// user.post('/add-new-user/:id', controller.addNewUser())
+// user.get('/', controller.getUser());

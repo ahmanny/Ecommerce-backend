@@ -1,13 +1,13 @@
 import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
 import { getUserByEmail, getUserById, getUserByName, getUserByPhone, getUserByRole, User } from "../models/user.model";
-import { CompleteRegistrationPayloadInterface, LoginPayloadInterface, OtpverifyPayloadInterface } from "../types/auth.types";
+import { forgottenPasswordPayloadInterface, LoginPayloadInterface, passwordResetPayloadInterface, SignupPayloadInterface } from "../types/auth.types";
 import bcrypt from 'bcrypt';
 import { generateTokens } from "../utils";
 import Exception from "../exceptions/Exception";
 import { EmailService } from "./email.service";
 import { deleteUserOtpById, getUserOtpById, otpCode } from "../models/otp.model";
 import { authenticator } from "otplib";
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { exec } from "child_process";
 import { error_handler, ok_handler } from "../utils/response_handler";
 
@@ -16,132 +16,161 @@ class AuthServiceClass {
     constructor() {
         // super()
     }
+
+    // registration of new customer
+    public async signUpFunction(payload: SignupPayloadInterface) {
+        const user_name = await getUserByName(payload.name)
+        const user_email = await getUserByEmail(payload.email)
+
+        // check if a user with the name and email exists
+        if (user_name && user_email) {
+            throw new Exception('Username and email already exist');
+        } else if (user_name || user_email) {
+            throw new Exception(`${user_name ? 'Name' : 'Email'} already exists`);
+        }
+
+        // encript password before storing in the db
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(payload.password, salt);
+        const new_user = await User.create({ ...payload, password: hashedPassword });
+
+        return {
+            new_user
+        }
+    }
+
+
+
+
+    // login service for user
     public async loginFunction(payload: LoginPayloadInterface) {
         const user = await getUserByEmail(payload.email)
 
+        // check if the user exists if not throw invalid email
         if (!user) {
             throw new InvalidAccessCredentialsExceptions("Invalid email")
         }
+        // check if user is verified
         if (!user.isVerified) {
             throw new Exception('User not registered')
         }
-        await EmailService.sendOtpEmail(payload.email, user.name)
-    }
-
-    // registration
-
-    public async checkTokenFunction(payload: { token: string }) {
-        try {
-            const decoded = jwt.verify(payload.token, process.env.JWT_SECRET_EMAIL_VERIFICATION!) as { id: string }
-
-            const user = await getUserById(decoded.id)
-            if (!user) {
-                throw new Exception('Invalid registration link')
-            }
-
-            return { isRegistered: user.isVerified }
-        } catch (error) {
-            if (error instanceof jwt.TokenExpiredError) {
-                throw new Exception('Registration link has expired')
-            }
-            if (error instanceof jwt.JsonWebTokenError) {
-                throw new InvalidAccessCredentialsExceptions('Invalid registration link')
-            }
+        const validPassword = await bcrypt.compare(payload.password, user.password);
+        // check if user entered a correct password
+        if (!validPassword) {
+            throw new InvalidAccessCredentialsExceptions("Invalid credentials")
         }
-    }
-
-
-    public async completeRegistration(payload: CompleteRegistrationPayloadInterface) {
-        const user_phone = await getUserByPhone(payload.phone)
-        if (user_phone) {
-            throw new Exception('A user by this number already exists')
-        }
-
-        const user = await getUserByEmail(payload.email)
-
-        if (!user) {
-            throw new Exception('User not found')
-        }
-
-
-        const updateData: Partial<CompleteRegistrationPayloadInterface & { isVerified: boolean }> = {
-            isVerified: true,
-            phone: payload.phone,
-            role: payload.role ?? user.role,
-            idCard_number: payload.idCard_number,
-        };
-
-
-        if (payload.profilePicture) {
-            updateData.profilePicture = payload.profilePicture;
-        }
-
-        const new_user = await User.findByIdAndUpdate(user._id, updateData, { new: true });
-        const tokens = await generateTokens(new_user);
-
-        return {
-            new_user, tokens
-        }
-    }
-
-
-
-
-
-    public async create_Superadmin() {
-        const superadmin = {
-            name: 'Super admin',
-            email: 'arab@mailinator.com',
-            phone: '00000000001',
-            disco: '648abf5e1e91d9f92b6b5678',
-            role: 'superadmin',
-            isVerified: true
-        }
-        const superadmin_acct = await getUserByRole(superadmin.role)
-        if (!superadmin_acct) {
-            await User.create({ ...superadmin })
-            console.log('created a superadmin');
-        }
-
-    }
-
-
-    public async verifyOtpFunction(payload: OtpverifyPayloadInterface) {
-        authenticator.options = {
-            window: 20,
-            digits: 6,
-        };
-
-        const user = await getUserByEmail(payload.email);
-        if (!user) {
-            throw new Exception("Invalid email");
-        }
-
-        const userId = user._id;
-        const otpRecord = await getUserOtpById(userId).exec();
-
-        if (!otpRecord) {
-            throw new Exception("You were not sent an OTP");
-        }
-
-        const isExpired = Date.now() > otpRecord.otpExpiration.getTime();
-        if (isExpired) {
-            await deleteUserOtpById(userId);
-            throw new Exception("OTP has expired");
-        }
-
-        const isValid = authenticator.verify({ token: payload.otpcode, secret: otpRecord.secret });
-
-        if (!isValid) {
-            throw new InvalidAccessCredentialsExceptions("Incorrect code");
-        }
-        await deleteUserOtpById(userId);
-
         const tokens = await generateTokens(user);
         return {
             user, tokens
         }
     }
+
+
+
+    // forgotten password service
+
+    public async forgottenPasswordFunction(payload: forgottenPasswordPayloadInterface) {
+        const user = await getUserByEmail(payload.email)
+        console.log(payload.email);
+
+
+        // check if a user with the email exist
+        if (!user) {
+            throw new InvalidAccessCredentialsExceptions("email invalid")
+        }
+        // check if user is verified
+        if (!user.isVerified) {
+            throw new Exception('User not registered')
+        }
+        const data = await EmailService.sendUserResetPasswordEmail({ email: user.email, name: user.name, id: user._id })
+        return {
+            data
+        }
+    }
+
+
+    // reset password
+    public async passwordResetFunction(payload: passwordResetPayloadInterface) {
+        const secret = process.env.JWT_SECRET as string
+        const decoded = jwt.verify(payload.token, secret) as JwtPayload
+        const user = await getUserByEmail(decoded.email)
+        // check if a user with the email exist
+        if (!user) {
+            throw new InvalidAccessCredentialsExceptions("invalid credential")
+        }
+        // check if user is verified
+        if (!user.isVerified) {
+            throw new Exception('User not registered')
+        }
+
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(payload.password, salt);
+        user.password = hashedPassword;
+        user.save()
+
+    }
+
+
+
+
+    public async create_Superadmin() {
+        const admin = {
+            name: 'Super admin',
+            email: 'arab@mailinator.com',
+            phone: '00000000001',
+            password: "1234567890",
+            role: 'admin',
+            isVerified: true
+        }
+        const admin_acct = await getUserByRole(admin.role)
+        if (!admin_acct) {
+            const salt = await bcrypt.genSalt();
+            const hashedPassword = await bcrypt.hash(admin.password, salt);
+            const new_admin = await User.create({ ...admin, password: hashedPassword });
+            console.log('created a admin');
+            console.log(new_admin);
+
+        }
+
+    }
+
+
+    // public async verifyOtpFunction(payload: OtpverifyPayloadInterface) {
+    //     authenticator.options = {
+    //         window: 20,
+    //         digits: 6,
+    //     };
+
+    //     const user = await getUserByEmail(payload.email);
+    //     if (!user) {
+    //         throw new Exception("Invalid email");
+    //     }
+
+    //     const userId = user._id;
+    //     const otpRecord = await getUserOtpById(userId).exec();
+
+    //     if (!otpRecord) {
+    //         throw new Exception("You were not sent an OTP");
+    //     }
+
+    //     const isExpired = Date.now() > otpRecord.otpExpiration.getTime();
+    //     if (isExpired) {
+    //         await deleteUserOtpById(userId);
+    //         throw new Exception("OTP has expired");
+    //     }
+
+    //     const isValid = authenticator.verify({ token: payload.otpcode, secret: otpRecord.secret });
+
+    //     if (!isValid) {
+    //         throw new InvalidAccessCredentialsExceptions("Incorrect code");
+    //     }
+    //     await deleteUserOtpById(userId);
+
+    //     const tokens = await generateTokens(user);
+    //     return {
+    //         user, tokens
+    //     }
+    // }
 }
 export const AuthService = new AuthServiceClass();
 

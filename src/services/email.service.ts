@@ -2,9 +2,9 @@ import { generateOTP, getOtpEmailContent } from "../utils/otp.utils";
 import mailjetClient from "../configs/mailjet.config";
 import { getUserByEmail } from "../models/user.model";
 import Exception from "../exceptions/Exception";
-import { SendVerificationEmailPayload } from "../types/disco.types";
-import { getVerificationEmailContent } from "../utils/disco.utils";
 import jwt from 'jsonwebtoken';
+import { SendResetPasswordLinkEmailPayload } from "../types/email.types";
+import { getVerificationEmailContent } from "../utils/email.utils";
 
 
 
@@ -16,6 +16,7 @@ class EmailServiceClass {
     constructor() {
         // super()
     }
+    // send otp to user for email confirmation
     public async sendOtpEmail(user_email: string, user_name: string) {
         const otpCode = await generateOTP(user_email)
 
@@ -29,7 +30,7 @@ class EmailServiceClass {
                         {
                             From: {
                                 Email: process.env.EMAIL_FROM,
-                                Name: "Pulse"
+                                Name: "ecommerce"
                             },
                             To: [
                                 {
@@ -51,15 +52,14 @@ class EmailServiceClass {
 
 
 
-    public async sendUserVerificationEmail(payload: SendVerificationEmailPayload) {
-        const token = jwt.sign({ id: payload.id }, process.env.JWT_SECRET_EMAIL_VERIFICATION!, {
-            expiresIn: '3d',
-        });
+    public async sendUserResetPasswordEmail(payload: SendResetPasswordLinkEmailPayload) {
+
+        const secret = process.env.JWT_SECRET as string
+        const resetToken = jwt.sign({ id: payload.id }, secret, { expiresIn: "1d" })
+
 
         const content = await getVerificationEmailContent({
-            senderName: payload.senderName,
-            discoName: payload.discoName,
-            token: token,
+            token: resetToken,
             email: payload.email,
             name: payload.name,
         })
@@ -81,16 +81,16 @@ class EmailServiceClass {
                                     Name: payload.name
                                 }
                             ],
-                            Subject: "Complete registration",
+                            Subject: "Reset Password",
                             HTMLPart: content
                         }
                     ]
                 });
-            return 'registeration link sent succesfully sent succesfully';
+            return 'reset password link was sent succesfully';
 
         } catch (error) {
             console.log(error);
-            throw new Exception("Could not send registeration link")
+            throw new Exception("Could not send reset password link")
         }
 
 

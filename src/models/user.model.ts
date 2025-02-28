@@ -2,12 +2,8 @@ import mongoose, { Date, Schema, model } from 'mongoose';
 
 
 export enum UserRoles {
-    SUPERADMIN = 'superadmin',
     ADMIN = 'admin',
-    EXECUTIVE = 'executive',
-    MANAGER = 'manager',
-    ANALYST = 'analyst',
-    AGENT = 'agent'
+    CUSTOMER = 'customer'
 }
 const roleOrder = Object.values(UserRoles)
 
@@ -18,10 +14,9 @@ export interface IUser {
     name: string;
     email: string;
     phone: string;
-    idCard_number: string
+    password: string;
     profilePicture: string
     role: UserRoles;
-    disco: mongoose.Types.ObjectId
     createdBy?: Schema.Types.ObjectId;
     isVerified: boolean
 }
@@ -29,6 +24,7 @@ export interface IUser {
 const UserSchema = new Schema<IUser>({
     name: {
         type: String,
+        required: true,
     },
     phone: {
         type: String,
@@ -38,21 +34,17 @@ const UserSchema = new Schema<IUser>({
         required: true,
         unique: true,
     },
-    idCard_number: {
-        type: String
+    password: {
+        type: String,
+        required: true
     },
     profilePicture: {
         type: String
     },
-    disco: {
-        type: Schema.Types.ObjectId,
-        ref: 'Disco',
-        required: true
-    },
     role: {
         type: String,
         enum: Object.values(UserRoles),
-        default: UserRoles.AGENT
+        default: UserRoles.CUSTOMER
     },
     isVerified: {
         type: Boolean,

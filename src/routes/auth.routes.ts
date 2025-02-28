@@ -4,12 +4,19 @@ import { UserMiddleware } from '../middlewares';
 import { upload } from '../middlewares/upload.middleware';
 
 export const auth = Router();
-const userMiddleware = new UserMiddleware();
+// const userMiddleware = new UserMiddleware();
+
+
 
 auth.post('/login', controller.loginController())
-auth.post('/login/veryfyOtp', controller.validateOtpController())
-auth.post('/check-registration-token', controller.checkRegistration())
-auth.post(
-    '/complete-registration', upload.single('profilePicture'),
-    controller.completeRegistrationController()
-);
+auth.post('/sign-up', controller.signup())
+auth.post('/forgotten-password', controller.forgottenPasswordController())
+auth.post('/password-reset', controller.passwordResetController());
+
+
+
+
+// auth.post(
+//     '/password-reset', upload.single('profilePicture'),
+//     controller.completeRegistrationController()
+// );
