@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { user } from './user.route';
 import { auth } from './auth.routes';
 import { UserMiddleware } from '../middlewares';
+import { order } from './order.routes';
+import { product } from './products.routes';
 
 const routes = Router();
 const userMiddleware = new UserMiddleware();
@@ -14,11 +16,12 @@ routes.get('/', (req: Request, res: Response) => {
 // API routes
 // authentication not required
 routes.use('/authentication', auth);
+routes.use('/products', product);
 
-
-routes.use(userMiddleware.validateToken)
 // authentication required
+routes.use(userMiddleware.validateToken)
 routes.use('/user', user);
+routes.use('/orders', order);
 
 
 export default routes;

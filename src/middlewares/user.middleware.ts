@@ -14,6 +14,7 @@ export class UserMiddleware {
         if (token?.is_valid_token && token.user) {
             req.user = token.user
         }
+        console.log("passed here 2")
         return token?.is_valid_token ? next() : res.status(408).send({ error: 'Unauthorized' });
     }
 
@@ -31,7 +32,7 @@ export class UserMiddleware {
                 if (!isAllowed) {
                     throw new Exception('You do not have permission to create this role.')
                 }
-                next(); // Proceed to create user
+                next(); // Proceed to next
             } catch (error) {
                 error_handler(error, req, res)
             }
@@ -65,6 +66,17 @@ export class UserMiddleware {
         };
     }
 
+
+
+    hasRole(role: string) {
+        return async (req: Request, res: Response, next: NextFunction) => {
+            const user = req?.user;
+            const has_role = Array.isArray(user?.role) ? user.role.includes(role) : user?.role === role;
+            console.log("passed here 1");
+
+            return has_role ? next() : res.status(403).send({ error: 'Access Denied' });
+        };
+    }
 }
 
 
@@ -81,13 +93,7 @@ export class UserMiddleware {
 
 
 
-// hasRole(role: string) {
-//     return async (req: Request, res: Response, next: NextFunction) => {
-//         const user = req?.user;
-//         const has_role = user?.role.find((e: string) => e === role);
-//         return has_role ? next() : res.status(403).send({ error: 'Access Denied' });
-//     };
-// }
+
 
 // hasAllRole(roles: Array<string>) {
 //     return async (req: Request, res: Response, next: NextFunction) => {

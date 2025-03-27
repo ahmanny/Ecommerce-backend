@@ -8,7 +8,10 @@ import morgan from 'morgan';
 import routes from './routes';
 import type { TServerConfig } from './types';
 import { AuthService } from './services/auth.service';
+import multer from 'multer';
 
+
+const upload = multer()
 export class InitServer {
     server: Express;
     database: typeof mongoose;
@@ -26,6 +29,7 @@ export class InitServer {
         this.server.set('log_level', config.log_level);
 
         // Setup middlewares
+        // this.server.use(upload.any())
         this.server.use(cors());
         this.server.use(helmet());
         this.server.use(morgan('tiny'));

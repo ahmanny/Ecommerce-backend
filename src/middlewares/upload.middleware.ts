@@ -1,24 +1,44 @@
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../configs/cloudinary.config';
-import { getUserByEmail } from '../models/user.model';
 
-const storage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-        const user = await getUserByEmail(req.body.email)
-        if (!user) {
-            throw new Error('User not found');
-        }
-        const userId = user._id
-        return {
-            folder: 'profile_pictures',
-            format: 'png',
-            public_id: `${userId}_${Date.now()}`,
-        };
-    },
-});
+
+// multer configuration to handle multiple file uploads in memory.
+const storage = multer.memoryStorage()
 
 export const upload = multer({ storage });
 
+// const storage = new CloudinaryStorage({
+//     cloudinary,
+//     params: async (req, file) => {
 
+//         const name = req.body.title
+//         console.log("upload middlware",file);
+//         const productByName = await Product.findOne({ title: name })
+
+//         if (productByName) {
+//             console.log("there is product with this title here");
+//             // throw new Exception("product  by this title   already exists")
+//             res.stat
+//         }
+
+//         return {
+//             folder: 'product_images',
+//             format: 'png',
+//             public_id: `${name}_${Date.now()}`,
+//         };
+//     },
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export const checkIfProductExist = 

@@ -17,7 +17,6 @@ export interface IUser {
     password: string;
     profilePicture: string
     role: UserRoles;
-    createdBy?: Schema.Types.ObjectId;
     isVerified: boolean
 }
 
@@ -50,7 +49,6 @@ const UserSchema = new Schema<IUser>({
         type: Boolean,
         default: false
     },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
     timestamps: true,
 });
@@ -99,6 +97,3 @@ export const deleteUserById = (id: string) => User.findByIdAndDelete({ _id: id }
 export const updateUserById = (id: string, values: Record<string, any>) => User.findByIdAndUpdate(id, values)
 
 export const updateUserByEmail = (userEmail: string, values: Record<string, any>) => User.findOneAndUpdate({ email: userEmail }, values, { new: true });
-
-
-export const getUsersUnderDiscoID = (discoID: String) => User.find({ disco: discoID }).populate({ path: 'disco', select: 'discoName' });

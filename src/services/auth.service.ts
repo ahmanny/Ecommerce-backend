@@ -24,9 +24,9 @@ class AuthServiceClass {
 
         // check if a user with the name and email exists
         if (user_name && user_email) {
-            throw new Exception('Username and email already exist');
-        } else if (user_name || user_email) {
-            throw new Exception(`${user_name ? 'Name' : 'Email'} already exists`);
+            throw new Exception('Account already exist');
+        } else if (user_email) {
+            throw new Exception('Email already exists');
         }
 
         // encript password before storing in the db
@@ -34,8 +34,9 @@ class AuthServiceClass {
         const hashedPassword = await bcrypt.hash(payload.password, salt);
         const new_user = await User.create({ ...payload, password: hashedPassword });
 
+        const tokens = await generateTokens(new_user);
         return {
-            new_user
+            new_user, tokens
         }
     }
 
@@ -71,12 +72,11 @@ class AuthServiceClass {
 
     public async forgottenPasswordFunction(payload: forgottenPasswordPayloadInterface) {
         const user = await getUserByEmail(payload.email)
-        console.log(payload.email);
 
 
         // check if a user with the email exist
         if (!user) {
-            throw new InvalidAccessCredentialsExceptions("email invalid")
+            throw new InvalidAccessCredentialsExceptions("Account does not exist")
         }
         // check if user is verified
         if (!user.isVerified) {

@@ -1,7 +1,6 @@
 import { Router } from 'express';
-import * as controller from '../controllers/user.controller';
+import * as controller from '../controllers/auth.controller';
 import { UserMiddleware } from '../middlewares';
-import { upload } from '../middlewares/upload.middleware';
 
 export const auth = Router();
 // const userMiddleware = new UserMiddleware();
