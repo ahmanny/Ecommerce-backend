@@ -10,12 +10,19 @@ export class UserMiddleware {
     constructor() { }
 
     async validateToken(req: Request, res: Response, next: NextFunction) {
-        const token = await getTokenInfo({ req });
-        if (token?.is_valid_token && token.user) {
-            req.user = token.user
+        try {
+            const token = await getTokenInfo({ req });
+            if (token?.is_valid_token && token.user) {
+                req.user = token.user
+            }
+
+            if (!token?.is_valid_token) {
+                throw new InvalidAccessCredentialsExceptions("Unauthorized")
+            }
+            next(); // Proceed to next
+        } catch (error) {
+            error_handler(error, req, res)
         }
-        console.log("passed here 2")
-        return token?.is_valid_token ? next() : res.status(408).send({ error: 'Unauthorized' });
     }
 
 
@@ -72,7 +79,6 @@ export class UserMiddleware {
         return async (req: Request, res: Response, next: NextFunction) => {
             const user = req?.user;
             const has_role = Array.isArray(user?.role) ? user.role.includes(role) : user?.role === role;
-            console.log("passed here 1");
 
             return has_role ? next() : res.status(403).send({ error: 'Access Denied' });
         };

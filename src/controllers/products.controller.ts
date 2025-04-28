@@ -6,6 +6,8 @@ import { getProducts, Product } from "../models/product.model";
 import { ProductService } from "../services/products.service";
 import cloudinary from "../configs/cloudinary.config";
 import Exception from "../exceptions/Exception";
+import ProductNotFoundException from "../exceptions/ProductNotFoundException";
+import { parseArray } from "../utils/product.utils";
 
 
 
@@ -13,19 +15,69 @@ import Exception from "../exceptions/Exception";
 export const createNewProduct = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
-            console.log("controller");
-
-            if(!req.cloudinaryUrls || req.cloudinaryUrls.length===0){
+            if (!req.cloudinaryUrls || req.cloudinaryUrls.length === 0) {
                 throw new Exception("image upload failed")
             }
             const imageUrls = req.cloudinaryUrls
-            const data = await ProductService.createProductFunction(req.body, imageUrls)
+            const data = await ProductService.createProductFunction({
+                ...req.body, colors: parseArray(req.body.colors), sizes: parseArray(req.body.sizes),
+                categories: parseArray(req.body.categories), highlights: parseArray(req.body.highlights)
+            }, imageUrls)
             ok_handler(res, "All products gotten successfully")
         } catch (error) {
             error_handler(error, req, res)
         }
     }
 }
+// update an product
+export const updateAProduct = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            const productId = req.params.id; // Get product ID from URL
+
+            if (!req.product) {
+                throw new ProductNotFoundException("Product not found");
+            }
+
+
+
+            const newImages = req.cloudinaryUrls || [];
+            const existingImages = parseArray(req.body.images);
+            const colors = parseArray(req.body.colors);
+            const sizes = parseArray(req.body.sizes);
+            const categories = parseArray(req.body.categories);
+            const highlights = parseArray(req.body.highlights);
+            const reviews = parseArray(req.body.reviews);
+
+            // Updated product data
+            const updatedProductData = {
+                ...req.body,
+                images: [...existingImages, ...newImages],
+                colors,
+                sizes,
+                categories,
+                highlights,
+                reviews,
+            };
+
+            // Call service function with productId
+            await ProductService.updateProductFunction({
+                productId,
+                product: updatedProductData,
+                newImageUrls: newImages,
+                existingProductImages: req.product.images || [],
+            });
+
+            ok_handler(res, "Product successfully updated");
+        } catch (error) {
+            console.log(error);
+
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
 // get all products
 export const getAllProducts = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
@@ -45,24 +97,7 @@ export const getAProduct = (): RequestHandler => {
             const data = await ProductService.getProductByIdFunction(productId)
             ok_handler(res, "Product gotten successfully", data)
         } catch (error) {
-            error_handler(error, req, res)
-
-        }
-    }
-}
-// update an product
-export const updateAProduct = (): RequestHandler => {
-    return async (req: Request, res: Response): Promise<void> => {
-        try {
-            const data = req.body
-            const order = await Product.findById(req.params.id)
-            if (!order) {
-                throw new NotFoundException("Order not found")
-            }
-            await Product.findByIdAndUpdate(req.params.id, { ...data }, { new: true })
-
-            ok_handler(res, "successfully updated")
-        } catch (error) {
+            console.log(error);
             error_handler(error, req, res)
 
         }
@@ -73,12 +108,51 @@ export const updateAProduct = (): RequestHandler => {
 export const deleteProduct = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
-            await ProductService.deleteProductFunction(req.params.id)
+            const productId = req.params.id
+            if (!productId) {
+                throw new Exception("product id is required")
+            }
+
+            await ProductService.deleteProductFunction(productId)
             ok_handler(res, "deleted successfully")
 
         } catch (error) {
+            console.log(error);
             error_handler(error, req, res)
 
+        }
+    }
+}
+
+
+export const getSimilarProduct = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            const productId = req.params.id; // Get product ID from URL
+            const data = await ProductService.getSimilarProductsFunction(productId)
+            ok_handler(res, "similar products available", data)
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res)
+        }
+    }
+}
+
+
+
+
+
+export const getHomeProducts = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            console.log("controller");
+
+            const data = await ProductService.getHomeProductsFunction()
+            ok_handler(res, "hello", data)
+
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res)
         }
     }
 }

@@ -1,0 +1,110 @@
+import { Request, RequestHandler, Response } from "express";
+import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
+import { created_handler, error_handler, ok_handler } from "../utils/response_handler";
+import { ReviewService } from "../services/review.service";
+
+// Create new review
+export const addReview = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!req.user) {
+                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+            }
+            await ReviewService.addReviewFunction(req.body, req.user._id);
+            created_handler(res, "Review successfully Added"); // Adjusted message
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
+
+
+
+// Get all reviews
+export const getAllReviews = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            const data = await ReviewService.getAllReviews();
+            ok_handler(res, "Fetched orders successfully", data);
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
+
+
+// Get a products reviews
+export const getProductReviews = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            const productId = req.params.id;
+            const { reviews } = await ReviewService.getProductReviews(productId);
+            ok_handler(res, "Fetched products reviews successfully", reviews);
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
+
+
+// Get a users reviews
+export const getUserReviews = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!req.user) {
+                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+            }
+            const userId = req.user._id;
+            const data = await ReviewService.getUserReviews(userId);
+            ok_handler(res, "Fetched user orders successfully", data);
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
+
+
+
+// Get a review
+export const getReview = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            const reviewId = req.params.id;
+            const data = await ReviewService.getReviewById(reviewId);
+            ok_handler(res, "Fetched order successfully", data);
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};
+
+
+
+
+
+
+// Delete an review
+export const deleteReview = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            await ReviewService.deleteReviewFunction(req.params.id);
+            ok_handler(res, "Order successfully deleted");
+        } catch (error) {
+            console.log(error);
+            error_handler(error, req, res);
+        }
+    };
+};

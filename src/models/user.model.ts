@@ -1,4 +1,4 @@
-import mongoose, { Date, Schema, model } from 'mongoose';
+import mongoose, { Date, Schema, Types, model } from 'mongoose';
 
 
 export enum UserRoles {
@@ -8,17 +8,36 @@ export enum UserRoles {
 const roleOrder = Object.values(UserRoles)
 
 
-
+export interface IUserAddress {
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+}
 
 export interface IUser {
     name: string;
     email: string;
     phone: string;
     password: string;
-    profilePicture: string
+    profilePicture: string;
+    shippingAddress: IUserAddress;
     role: UserRoles;
     isVerified: boolean
+    cart: Types.ObjectId;
+    wishlist: Types.ObjectId;
+    orders: Types.ObjectId;
+    reviews: Types.ObjectId;
 }
+
+const UserAddress = new Schema<IUserAddress>({
+    address: { type: String },
+    city: { type: String },
+    state: { type: String },
+    zipCode: { type: String },
+    country: { type: String },
+});
 
 const UserSchema = new Schema<IUser>({
     name: {
@@ -35,11 +54,12 @@ const UserSchema = new Schema<IUser>({
     },
     password: {
         type: String,
-        required: true
+        required: true,
     },
     profilePicture: {
         type: String
     },
+    shippingAddress: UserAddress,
     role: {
         type: String,
         enum: Object.values(UserRoles),
@@ -49,6 +69,22 @@ const UserSchema = new Schema<IUser>({
         type: Boolean,
         default: false
     },
+    wishlist: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wishlist',
+    }],
+    cart: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Cart',
+    }],
+    orders: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order',
+    }],
+    reviews: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Review',
+    }],
 }, {
     timestamps: true,
 });

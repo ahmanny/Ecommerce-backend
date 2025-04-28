@@ -19,23 +19,44 @@ export class ProductMiddleware {
 
 
 
-    // middleware to check if a product with the title exists
+    // middleware to check if a product  exists
+
     async checkIfProductExist(req: Request, res: Response, next: NextFunction) {
         try {
-            const { title } = req.body
-            const productByName = await Product.findOne({ title })
+            const { title } = req.body;
+            const productId = req.params.id;
 
-            if (productByName) {
-                console.log("false");
-                throw new Exception("Product with this title exists")
-                // return res.status(400).json({ message: "" })
+            if (productId) {
+                // Find the product by ID
+                const existingProduct = await Product.findById(productId);
+                if (!existingProduct) {
+                    throw new Exception("Product not found");
+                }
+                // If the title is being updated, check if it's already taken
+                if (title && title !== existingProduct.title) {
+                    const productByName = await Product.findOne({ title });
+                    if (productByName) {
+                        throw new Exception("Product with this title already exists");
+                    }
+                }
+
+                req.product = existingProduct; // Attach product to request
             } else {
-                next();
+                // If creating a new product, check for duplicate title
+                if (title) {
+                    const productByName = await Product.findOne({ title });
+                    if (productByName) {
+                        throw new Exception("Product with this title already exists");
+                    }
+                }
             }
+
+            next();
         } catch (error) {
-            error_handler(error, req, res)
+            error_handler(error, req, res);
         }
     }
+
 }
 
 

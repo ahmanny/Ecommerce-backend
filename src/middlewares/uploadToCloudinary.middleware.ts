@@ -2,13 +2,15 @@ import { NextFunction, Request, Response } from "express";
 import cloudinary from "../configs/cloudinary.config";
 
 
-
 export const uploadToCloudinary = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.files || !(req.files instanceof Array)) {
-        return res.status(400).json({ message: "No files uploaded" })
+    if (!req.files || !(req.files instanceof Array) || req.files.length === 0) {
+        req.cloudinaryUrls = []; // If no new images are uploaded, set empty array
+        return next();
     }
+
     try {
-        const name = req.body.title
+
+        const name = req.body.title;
         const uploadPromises = req.files.map((file) => {
             return new Promise<string>((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
@@ -19,16 +21,15 @@ export const uploadToCloudinary = async (req: Request, res: Response, next: Next
                     },
                     (error, cloudinaryResult) => {
                         if (error) reject(error);
-                        else resolve(cloudinaryResult?.secure_url || '')
+                        else resolve(cloudinaryResult?.secure_url || '');
                     }
                 ).end(file.buffer);
             });
         });
 
-        req.cloudinaryUrls = await Promise.all(uploadPromises)
-        next()
-
+        req.cloudinaryUrls = await Promise.all(uploadPromises);
+        next();
     } catch (error) {
-        res.status(500).json({ message: "Error uploading images:", error })
+        res.status(500).json({ message: "Error uploading images", error });
     }
-}
+};

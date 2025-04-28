@@ -9,9 +9,10 @@ const userMiddleware = new UserMiddleware();
 
 order.post('/create', controller.createNewOrder())
 order.get('/all-orders', userMiddleware.hasRole('admin'), controller.getAllOrders())
-order.get('/:id', controller.getAnOrder())
-order.put('/:id/update', controller.updateOrder())
-order.delete('/:id', controller.deleteOrder())
+order.get('/get-user-orders', controller.getUserOrders())
+order.get('/get/:id', controller.getAnOrder())
+order.put('/update/:id', controller.updateOrder())
+order.delete('/delete/:id', controller.deleteOrder())
 
 
 

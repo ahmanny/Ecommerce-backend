@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import Exception from '../exceptions/Exception';
 import InvalidAccessCredentialsExceptions from '../exceptions/InvalidAccessCredentialsException';
-import UserExistException from '../exceptions/UserExistException';
 import NotFoundException from '../exceptions/NotFoundException';
+import ProductNotFoundException from '../exceptions/ProductNotFoundException';
+import UserNotFoundException from '../exceptions/UserNotFoundException';
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 const HTTP_BAD_REQUEST = 400;
@@ -20,12 +21,17 @@ export const error_handler = (error: unknown, req: Request, res: Response) => {
 				message: error.message,
 				code: error.code,
 			});
-		} else if (error instanceof UserExistException) {
+		} else if (error instanceof UserNotFoundException) {
 			res.status(HTTP_CONFLICT).json({
 				message: error.message,
 				code: error.code,
 			});
 		} else if (error instanceof NotFoundException) {
+			res.status(HTTP_RESOURCE_NOT_FOUND).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof ProductNotFoundException) {
 			res.status(HTTP_RESOURCE_NOT_FOUND).json({
 				message: error.message,
 				code: error.code,

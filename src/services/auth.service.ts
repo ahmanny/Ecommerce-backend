@@ -2,14 +2,11 @@ import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCrede
 import { getUserByEmail, getUserById, getUserByName, getUserByPhone, getUserByRole, User } from "../models/user.model";
 import { forgottenPasswordPayloadInterface, LoginPayloadInterface, passwordResetPayloadInterface, SignupPayloadInterface } from "../types/auth.types";
 import bcrypt from 'bcrypt';
-import { generateTokens } from "../utils";
+import { generateTokens, getTokenInfo } from "../utils";
 import Exception from "../exceptions/Exception";
 import { EmailService } from "./email.service";
-import { deleteUserOtpById, getUserOtpById, otpCode } from "../models/otp.model";
-import { authenticator } from "otplib";
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { exec } from "child_process";
-import { error_handler, ok_handler } from "../utils/response_handler";
+import { RefreshToken } from "../models/refresh-token.model";
 
 
 class AuthServiceClass {
@@ -17,7 +14,7 @@ class AuthServiceClass {
         // super()
     }
 
-    // registration of new customer
+    // registration of new customerr
     public async signUpFunction(payload: SignupPayloadInterface) {
         const user_name = await getUserByName(payload.name)
         const user_email = await getUserByEmail(payload.email)
@@ -32,11 +29,11 @@ class AuthServiceClass {
         // encript password before storing in the db
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(payload.password, salt);
-        const new_user = await User.create({ ...payload, password: hashedPassword });
+        const user = await User.create({ ...payload, password: hashedPassword });
 
-        const tokens = await generateTokens(new_user);
+        const tokens = await generateTokens(user);
         return {
-            new_user, tokens
+            user, tokens
         }
     }
 
@@ -52,9 +49,9 @@ class AuthServiceClass {
             throw new InvalidAccessCredentialsExceptions("Invalid email")
         }
         // check if user is verified
-        if (!user.isVerified) {
-            throw new Exception('User not registered')
-        }
+        // if (user.isVerified) {
+        //     throw new Exception('User not registered')
+        // }
         const validPassword = await bcrypt.compare(payload.password, user.password);
         // check if user entered a correct password
         if (!validPassword) {
@@ -63,6 +60,37 @@ class AuthServiceClass {
         const tokens = await generateTokens(user);
         return {
             user, tokens
+        }
+    }
+
+
+
+    // refresh users session using refreshtoken
+    public async refreshUserToken(refresh_token: string) {
+
+        const token_info = await getTokenInfo({
+            token: refresh_token,
+            token_type: 'refresh',
+        });
+
+        const user = token_info?.user;
+
+        if (!token_info?.is_valid_token || !user) {
+            throw new InvalidAccessCredentialsExceptions("Invalid or expired refresh token")
+        }
+
+        // 2. Check if token is in DB
+        const tokenInDb = await RefreshToken.findOne({ refresh_token: refresh_token, user_id: user._id });
+        if (!tokenInDb) {
+            throw new InvalidAccessCredentialsExceptions("Refresh token not found in DB")
+        }
+
+        //3. delete old token and save new one
+        await RefreshToken.deleteOne({ token: refresh_token });
+
+        const tokens = await generateTokens(user);
+        return {
+            tokens, user
         }
     }
 

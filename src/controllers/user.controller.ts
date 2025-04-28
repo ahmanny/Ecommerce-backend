@@ -1,3 +1,36 @@
+import { Request, RequestHandler, Response } from "express";
+import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
+import { User } from "../models/user.model";
+import { error_handler, ok_handler } from "../utils/response_handler"
+import { UserService } from "../services/user.service";
+import { error } from "console";
+
+
+
+export const updateUserController = (): RequestHandler => {
+    return async (req: Request, res: Response): Promise<void> => {
+        try {
+            if (!req.user) {
+                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+            }
+            const data = {
+                shippingAddress: req.body
+            };
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user._id,
+                { $set: data },
+                { new: true }
+            ).select("-password");
+            if (!updatedUser) {
+                throw new Error("No changes were made");
+            }
+            ok_handler(res, "User updated successfully");
+
+        } catch (error) {
+            error_handler(error, req, res)
+        }
+    }
+}
 
 
 
@@ -5,52 +38,9 @@
 
 
 
-// export const completeRegistrationController = (): RequestHandler => {
-//     return async (req: express.Request, res: express.Response): Promise<void> => {
-//         try {
-//             const profilePicture = req.file?.path;
-//             const data = await AuthService.completeRegistration({
-//                 ...req.body,
-//                 profilePicture: profilePicture,
-//             });
-
-//             created_handler(res, "Registered succesfully", data)
-//         } catch (error) {
-//             error_handler(error, req, res)
-//         }
-//     }
-// }
-
-
-// export const validateOtpController = (): RequestHandler => {
-//     return async (req: express.Request, res: express.Response): Promise<void> => {
-//         try {
-//             const data = await AuthService.verifyOtpFunction(req.body)
-
-//             ok_handler(res, " successfully", data)
-
-//         } catch (error) {
-//             error_handler(error, req, res)
-//         }
-//     }
-// }
 
 
 
-
-
-// export const addNewUser = (): RequestHandler => {
-//     return async (req: express.Request, res: express.Response): Promise<void> => {
-//         try {
-//             await UserService.addNewUserService(req.body, req)
-//             ok_handler(res, "Added user successfully")
-//         } catch (error) {
-//             console.log(error);
-
-//             error_handler(error, req, res)
-//         }
-//     }
-// }
 
 
 

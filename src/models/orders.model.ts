@@ -1,47 +1,57 @@
 import { Schema, Types, model } from 'mongoose';
-import { Product } from './product.model';
+import { CartItemSchema, ICartItem } from './cart.model';
 
-interface IOrder {
-    user_id: Types.ObjectId;
-    items: {
-        product_id: Types.ObjectId;
-        quantity: number;
-    }
-    payment_status: "pending" | "paid" | "failed"
-    total_price: number;
-    order_status: "pending" | "processing" | "shipped" | "delivered" | "canceled";
-    createdAt: Date;
-    updatedAt: Date;
+export interface IShippingDetails {
+    email: string;
+    address: string;
+    name: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
 }
+export interface IOrderSummary {
+    subtotal: number;
+    tax: number;
+    total: number;
+}
+export interface IOrder {
+    items: ICartItem[];
+    shippingDetails: IShippingDetails
+    summary: IOrderSummary
+    payment_status: "pending" | "paid" | "failed"
+    order_status: "pending" | "processing" | "shipped" | "delivered" | "canceled";
+}
+export interface IUserOrder {
+    user: Types.ObjectId;
+    orders: IOrder[];
+}
+// schemas
+export const ShippingDetailsSchema = new Schema<IShippingDetails>({
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    zipCode: { type: String, required: true },
+    country: { type: String, required: true },
+});
+
+
+const OrderSummarySchema = new Schema<IOrderSummary>({
+    subtotal: { type: Number, required: true },
+    tax: { type: Number, required: true },
+    total: { type: Number, required: true },
+});
 
 const OrderSchema = new Schema<IOrder>({
-    user_id: {
-        type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'User',
-    },
-    items: [
-        {
-            product_id: {
-                type: Schema.Types.ObjectId,
-                required: true,
-                ref: Product
-            },
-            quantity: {
-                type: Number,
-                required: true,
-                min: 1
-            },
-        }
-    ],
+    items: [CartItemSchema],
+    shippingDetails: ShippingDetailsSchema,
+    summary: OrderSummarySchema,
     payment_status: {
         type: String,
         enum: ["pending", "paid", "failed"],
         default: "pending"
-    },
-    total_price: {
-        type: Number,
-        required: true,
     },
     order_status: {
         type: String,
@@ -49,10 +59,15 @@ const OrderSchema = new Schema<IOrder>({
         default: "pending"
     },
 
-},
-    { timestamps: true });
+}, { timestamps: true });
 
-export const Order = model<IOrder>('Order', OrderSchema);
+const UserOrderSchema = new Schema<IUserOrder>({
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    orders: [OrderSchema],
+}, { timestamps: true });
+
+export const Order = model<IUserOrder>('Order', UserOrderSchema);
+
 
 
 

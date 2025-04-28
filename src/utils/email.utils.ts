@@ -25,3 +25,4 @@ export async function getVerificationEmailContent({ token, email, name }: resetP
         throw error;
     }
 }
+
