@@ -12,7 +12,7 @@ interface resetPasswordEmailData {
 
 export async function getVerificationEmailContent({ token, email, name }: resetPasswordEmailData): Promise<string> {
     try {
-        const clientResetPasswordUrl = process.env.CLIENT_RESET_PASSWORD_URL
+        const clientResetPasswordUrl = process.env.CLIENT_RESET_PASSWORD_URL || 'http://localhost:3000/auth/reset-password'
         const templatePath = path.resolve(__dirname, '..', 'templates', 'resetPasswordEmail.template.hbs');
 
         const templateSource = await fs.readFile(templatePath, 'utf-8');

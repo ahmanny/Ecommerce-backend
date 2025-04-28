@@ -48,7 +48,7 @@ export class InitServer {
 
     async start() {
         const host = this.server.get('host');
-        const port = this.server.get('port');
+        const port = process.env.PORT || this.server.get('port') || 8000;
 
         try {
             await this.database.connect(process.env.DB_URL!);
