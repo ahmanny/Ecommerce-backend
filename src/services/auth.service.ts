@@ -1,5 +1,5 @@
 import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
-import { getUserByEmail, getUserById, getUserByName, getUserByPhone, getUserByRole, User } from "../models/user.model";
+import { getUserByEmail, getUserByName, getUserByRole, User } from "../models/user.model";
 import { forgottenPasswordPayloadInterface, LoginPayloadInterface, passwordResetPayloadInterface, SignupPayloadInterface } from "../types/auth.types";
 import bcrypt from 'bcrypt';
 import { generateTokens, getTokenInfo } from "../utils";
@@ -7,6 +7,9 @@ import Exception from "../exceptions/Exception";
 import { EmailService } from "./email.service";
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { RefreshToken } from "../models/refresh-token.model";
+import ConflictException from "../exceptions/ConflictException";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
+import { sanitizeUser } from "../utils/user.utils";
 
 
 class AuthServiceClass {
@@ -16,14 +19,18 @@ class AuthServiceClass {
 
     // registration of new customerr
     public async signUpFunction(payload: SignupPayloadInterface) {
+
+        if (!payload.name || !payload.email || !payload.password) {
+            throw new InvalidAccessCredentialsExceptions("Invalid Credentials")
+        }
         const user_name = await getUserByName(payload.name)
         const user_email = await getUserByEmail(payload.email)
 
         // check if a user with the name and email exists
         if (user_name && user_email) {
-            throw new Exception('Account already exist');
+            throw new ConflictException('Account already exist');
         } else if (user_email) {
-            throw new Exception('Email already exists');
+            throw new ConflictException('Email already exists');
         }
 
         // encript password before storing in the db
@@ -33,7 +40,8 @@ class AuthServiceClass {
 
         const tokens = await generateTokens(user);
         return {
-            user, tokens
+            user: sanitizeUser(user),
+            tokens
         }
     }
 
@@ -42,16 +50,15 @@ class AuthServiceClass {
 
     // login service for user
     public async loginFunction(payload: LoginPayloadInterface) {
+        if (!payload.email || !payload.password) {
+            throw new InvalidAccessCredentialsExceptions("Invalid Credentials")
+        }
         const user = await getUserByEmail(payload.email)
 
-        // check if the user exists if not throw invalid email
+        // check if the user exists
         if (!user) {
-            throw new InvalidAccessCredentialsExceptions("Invalid email")
+            throw new ResourceNotFoundException("User by this email does not exists")
         }
-        // check if user is verified
-        // if (user.isVerified) {
-        //     throw new Exception('User not registered')
-        // }
         const validPassword = await bcrypt.compare(payload.password, user.password);
         // check if user entered a correct password
         if (!validPassword) {
@@ -59,10 +66,23 @@ class AuthServiceClass {
         }
         const tokens = await generateTokens(user);
         return {
-            user, tokens
+            user: sanitizeUser(user),
+            tokens
         }
     }
 
+
+
+    // logout service for user
+    public async logoutFunction(refresh_token: string) {
+        // 1. check if the token is in the db
+        const tokenInDb = await RefreshToken.findOne({ refresh_token });
+        if (!tokenInDb) {
+            throw new InvalidAccessCredentialsExceptions("Invalid refresh token")
+        }
+        // 2. delete the token from the db
+        await RefreshToken.deleteOne({ refresh_token });
+    }
 
 
     // refresh users session using refreshtoken
@@ -73,16 +93,19 @@ class AuthServiceClass {
             token_type: 'refresh',
         });
 
-        const user = token_info?.user;
 
-        if (!token_info?.is_valid_token || !user) {
+        if (!token_info?.is_valid_token || !token_info?.user) {
             throw new InvalidAccessCredentialsExceptions("Invalid or expired refresh token")
         }
 
         // 2. Check if token is in DB
-        const tokenInDb = await RefreshToken.findOne({ refresh_token: refresh_token, user_id: user._id });
+        const tokenInDb = await RefreshToken.findOne({ refresh_token: refresh_token, user_id: token_info?.user._id });
         if (!tokenInDb) {
-            throw new InvalidAccessCredentialsExceptions("Refresh token not found in DB")
+            throw new ResourceNotFoundException("Refresh token not found in DB")
+        }
+        const user = await getUserByEmail(token_info?.user?.email)
+        if (!user) {
+            throw new ResourceNotFoundException("User not found")
         }
 
         //3. delete old token and save new one
@@ -90,12 +113,9 @@ class AuthServiceClass {
 
         const tokens = await generateTokens(user);
         return {
-            tokens, user
+            tokens, user: sanitizeUser(user)
         }
     }
-
-
-
     // forgotten password service
 
     public async forgottenPasswordFunction(payload: forgottenPasswordPayloadInterface) {
@@ -105,10 +125,6 @@ class AuthServiceClass {
         // check if a user with the email exist
         if (!user) {
             throw new InvalidAccessCredentialsExceptions("Account does not exist")
-        }
-        // check if user is verified
-        if (!user.isVerified) {
-            throw new Exception('User not registered')
         }
         const data = await EmailService.sendUserResetPasswordEmail({ email: user.email, name: user.name, id: user._id })
         return {
@@ -135,7 +151,6 @@ class AuthServiceClass {
         const hashedPassword = await bcrypt.hash(payload.password, salt);
         user.password = hashedPassword;
         user.save()
-
     }
 
 

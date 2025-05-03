@@ -1,5 +1,5 @@
 import Exception from "../exceptions/Exception";
-import NotFoundException from "../exceptions/NotFoundException";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
 import { Order } from "../models/orders.model";
 import { getProductById, Product } from "../models/product.model";
 import { Review } from "../models/review.models";
@@ -17,7 +17,7 @@ class ReviewServiceClass {
 
         const product = await getProductById(payload.product);
         if (!product) {
-            throw new NotFoundException(`Product with ID ${payload.product} was not found`);
+            throw new ResourceNotFoundException(`Product with ID ${payload.product} was not found`);
         }
 
         const hasPurchased = await Order.exists({
@@ -64,7 +64,7 @@ class ReviewServiceClass {
             .populate('product', 'name price images');
 
         if (!review) {
-            throw new NotFoundException('Review not found');
+            throw new ResourceNotFoundException('Review not found');
         }
         return review;
     }
@@ -74,7 +74,7 @@ class ReviewServiceClass {
     public async deleteReviewFunction(reviewId: string) {
         const review = await Review.findByIdAndDelete(reviewId);
         if (!review) {
-            throw new NotFoundException("Review not found");
+            throw new ResourceNotFoundException("Review not found");
         }
         return { review };
     }
@@ -92,7 +92,7 @@ class ReviewServiceClass {
     // get a products reviews
     public async getProductReviews(productId: string) {
         const product = await Product.findById(productId);
-        if (!product) throw new NotFoundException("Product not found");
+        if (!product) throw new ResourceNotFoundException("Product not found");
 
         const reviews = await Review.find({ product: productId })
             .populate('user', 'name email profilePicture') // user details to be included
@@ -102,11 +102,8 @@ class ReviewServiceClass {
     }
 
 
-    // get a reviews written by a user
+    // get reviews written by a user
     public async getUserReviews(userId: string) {
-        const user = await User.findById(userId);
-        if (!user) throw new NotFoundException("User not found");
-
         const reviews = await Review.find({ user: userId })
             .populate('product', 'name price images') // Customize as needed
             .sort({ createdAt: -1 });

@@ -1,9 +1,8 @@
 import { Request, RequestHandler, Response } from "express";
-import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
 import { User } from "../models/user.model";
 import { error_handler, ok_handler } from "../utils/response_handler"
-import { UserService } from "../services/user.service";
-import { error } from "console";
+import UnauthorizedAccessException from "../exceptions/UnauthorizedAccessException";
+import Exception from "../exceptions/Exception";
 
 
 
@@ -11,7 +10,7 @@ export const updateUserController = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             if (!req.user) {
-                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+                throw new UnauthorizedAccessException("Unauthorized");
             }
             const data = {
                 shippingAddress: req.body
@@ -22,7 +21,7 @@ export const updateUserController = (): RequestHandler => {
                 { new: true }
             ).select("-password");
             if (!updatedUser) {
-                throw new Error("No changes were made");
+                throw new Exception("No changes were made");
             }
             ok_handler(res, "User updated successfully");
 

@@ -1,8 +1,8 @@
 import mongoose, { Types } from "mongoose";
 import Exception from "../exceptions/Exception";
-import NotFoundException from "../exceptions/NotFoundException";
 import { Wishlist } from "../models/wishlist.model";
 import { WishlistInterfacePayload } from "../types/wishlist.types";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
 
 
 
@@ -67,7 +67,7 @@ class WishlistServiceClass {
     public async deleteWishlistFunction(payload: WishlistInterfacePayload) {
         const wishlist = await Wishlist.findOne({ user: payload.user })
         if (!wishlist) {
-            throw new NotFoundException("Wishlist not found")
+            throw new ResourceNotFoundException("Wishlist not found")
         }
         const productId = payload.productId;
         wishlist.items = wishlist.items.filter((item) => !item.productId.equals(productId))

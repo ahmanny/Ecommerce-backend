@@ -1,6 +1,6 @@
 import cloudinary from "../configs/cloudinary.config";
-import NotFoundException from "../exceptions/NotFoundException";
-import UserExistException from "../exceptions/UserNotFoundException";
+import ConflictException from "../exceptions/ConflictException";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
 import { createProduct, getProductByTitle, Product } from "../models/product.model";
 import { AddNewProductPayloadInterface, updateProductPayloadInterface } from "../types/product.types";
 import { ensureArray } from "../utils/cart.utils";
@@ -20,7 +20,7 @@ class ProductServiceClass {
     public async createProductFunction(payload: AddNewProductPayloadInterface, images: string[]) {
         const productByName = await getProductByTitle(payload.title)
         if (productByName) {
-            throw new UserExistException("product  already exists")
+            throw new ConflictException("product  already exists")
         }
         const price = Number(payload.price)
         const quantity_available = Number(payload.quantity_available)
@@ -77,7 +77,7 @@ class ProductServiceClass {
         const product = await productQuery.exec();
 
         if (!product) {
-            throw new NotFoundException("Product not found");
+            throw new ResourceNotFoundException("Product not found");
         }
         return {
             product
@@ -89,7 +89,7 @@ class ProductServiceClass {
     public async getSimilarProductsFunction(productId: string) {
         const currentProduct = await Product.findById(productId).populate('categories');
         if (!currentProduct) {
-            throw new NotFoundException("Product not found");
+            throw new ResourceNotFoundException("Product not found");
         }
 
         const categoryIds = currentProduct.categories.map((cat) => cat._id);
@@ -122,7 +122,7 @@ class ProductServiceClass {
         // Find product first
         const product = await Product.findById(ProductId);
         if (!product) {
-            throw new NotFoundException("Product not found");
+            throw new ResourceNotFoundException("Product not found");
         }
 
         // Delete images from Cloudinary

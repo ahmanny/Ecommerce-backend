@@ -1,5 +1,5 @@
 import Exception from "../exceptions/Exception";
-import NotFoundException from "../exceptions/NotFoundException";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
 import { Cart } from "../models/cart.model";
 import { createOrder, Order } from "../models/orders.model";
 import { getProductById } from "../models/product.model";
@@ -16,7 +16,7 @@ class OrderServiceClass {
         for (const item of payload.items) {
             const product = await getProductById(item.productId);
             if (!product) {
-                throw new NotFoundException(`Product with ID ${item.productId} not found`);
+                throw new ResourceNotFoundException(`Product with ID ${item.productId} not found`);
             }
         }
         const orders = ensureArray(payload)
@@ -50,7 +50,7 @@ class OrderServiceClass {
     public async getOrderByIdFunction(orderId: string) {
         const order = await Order.findById(orderId).populate("user", "name email").populate("items.productId");
         if (!order) {
-            throw new NotFoundException("Order not found");
+            throw new ResourceNotFoundException("Order not found");
         }
         return { order };
     }
@@ -70,7 +70,7 @@ class OrderServiceClass {
         }
         // const order = await Order.findOne({ user: userId }).populate("order.items.productId");
         if (!userOrders) {
-            throw new NotFoundException("No orders found on thi account");
+            throw new ResourceNotFoundException("No orders found on thi account");
         }
         return { userOrders };
     }
@@ -79,7 +79,7 @@ class OrderServiceClass {
     public async deleteOrderFunction(orderId: string) {
         const order = await Order.findByIdAndDelete(orderId);
         if (!order) {
-            throw new NotFoundException("Order not found");
+            throw new ResourceNotFoundException("Order not found");
         }
         return { order };
     }

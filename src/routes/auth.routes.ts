@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import * as controller from '../controllers/auth.controller';
-import * as userController from '../controllers/user.controller';
-import { UserMiddleware } from '../middlewares';
 
 export const auth = Router();
 // const userMiddleware = new UserMiddleware();
@@ -9,6 +7,7 @@ export const auth = Router();
 
 auth.post('/sign-up', controller.signup())
 auth.post('/login', controller.loginController())
+auth.post('/logout/:token', controller.logoutController())
 auth.post('/refresh-token', controller.refreshToken())
 auth.post('/forgotten-password', controller.forgottenPasswordController())
 auth.post('/password-reset', controller.passwordResetController());

@@ -4,7 +4,9 @@ import type { TUser } from '../types';
 import { canUserCreateRole, UserRoles } from '../models/user.model';
 import Exception from '../exceptions/Exception';
 import { error_handler } from '../utils/response_handler';
-import InvalidAccessCredentialsExceptions from '../exceptions/InvalidAccessCredentialsException';
+import AuthenticationTokenException from '../exceptions/AuthenticationTokenException';
+import UnauthorizedAccessException from '../exceptions/UnauthorizedAccessException';
+import ForbiddenAccessException from '../exceptions/ForbiddenAccessException';
 
 export class UserMiddleware {
     constructor() { }
@@ -17,7 +19,7 @@ export class UserMiddleware {
             }
 
             if (!token?.is_valid_token) {
-                throw new InvalidAccessCredentialsExceptions("Unauthorized")
+                throw new AuthenticationTokenException("Invalid or Expired authentication token")
             }
             next(); // Proceed to next
         } catch (error) {
@@ -54,7 +56,7 @@ export class UserMiddleware {
             const user = req?.user;
             try {
                 if (!user) {
-                    throw new InvalidAccessCredentialsExceptions('Unauthorized user')
+                    throw new UnauthorizedAccessException('Unauthorized user')
                 }
 
                 const user_role = user.role;
@@ -64,7 +66,7 @@ export class UserMiddleware {
                 if (has_role) {
                     return next();
                 } else {
-                    throw new InvalidAccessCredentialsExceptions('Not authorized')
+                    throw new ForbiddenAccessException('Not authorized to access this resource')
                 }
             } catch (error) {
                 error_handler(error, req, res)

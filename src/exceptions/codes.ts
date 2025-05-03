@@ -1,5 +1,11 @@
 export const ExceptionCode = 101;
 export const InvalidAccessCredentialsExceptionsCode = 102;
-export const NotFoundExceptionCode = 103;
 export const UserNotFoundCode = 104;
 export const ProductNotFoundCode = 105;
+export const AuthenticationTokenExceptionCode = 106;
+export const TokenExpiredExceptionCode = 107;
+export const UnauthorizedAccessExceptionCode = 108
+export const ForbiddenAccessExceptionCode = 109
+export const MissingParameterExceptionCode = 110
+export const ResourceNotFoundExceptionCode = 111
+export const ConflictExceptionCode = 112

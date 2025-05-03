@@ -1,9 +1,14 @@
 import { Request, Response } from 'express';
 import Exception from '../exceptions/Exception';
 import InvalidAccessCredentialsExceptions from '../exceptions/InvalidAccessCredentialsException';
-import NotFoundException from '../exceptions/NotFoundException';
-import ProductNotFoundException from '../exceptions/ProductNotFoundException';
-import UserNotFoundException from '../exceptions/UserNotFoundException';
+import UnauthorizedAccessException from '../exceptions/UnauthorizedAccessException';
+import TokenExpiredException from '../exceptions/TokenExpiredException';
+import ForbiddenAccessException from '../exceptions/ForbiddenAccessException';
+import AuthenticationTokenException from '../exceptions/AuthenticationTokenException';
+import MissingParameterException from '../exceptions/MissingParameterException';
+import ResourceNotFoundException from '../exceptions/ResourceNotFoundException';
+import ConflictException from '../exceptions/ConflictException';
+import mongoose from 'mongoose';
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 const HTTP_BAD_REQUEST = 400;
@@ -21,18 +26,38 @@ export const error_handler = (error: unknown, req: Request, res: Response) => {
 				message: error.message,
 				code: error.code,
 			});
-		} else if (error instanceof UserNotFoundException) {
+		} else if (error instanceof AuthenticationTokenException) {
+			res.status(HTTP_UNAUTHORIZED).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof UnauthorizedAccessException) {
+			res.status(HTTP_UNAUTHORIZED).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof TokenExpiredException) {
+			res.status(HTTP_UNAUTHORIZED).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof ForbiddenAccessException) {
+			res.status(HTTP_FORBIDDEN).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof MissingParameterException) {
+			res.status(HTTP_BAD_REQUEST).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof ResourceNotFoundException) {
+			res.status(HTTP_RESOURCE_NOT_FOUND).json({
+				message: error.message,
+				code: error.code,
+			});
+		} else if (error instanceof ConflictException) {
 			res.status(HTTP_CONFLICT).json({
-				message: error.message,
-				code: error.code,
-			});
-		} else if (error instanceof NotFoundException) {
-			res.status(HTTP_RESOURCE_NOT_FOUND).json({
-				message: error.message,
-				code: error.code,
-			});
-		} else if (error instanceof ProductNotFoundException) {
-			res.status(HTTP_RESOURCE_NOT_FOUND).json({
 				message: error.message,
 				code: error.code,
 			});
@@ -42,9 +67,14 @@ export const error_handler = (error: unknown, req: Request, res: Response) => {
 				code: error.code,
 			});
 		}
+	} else if (error instanceof mongoose.Error.ValidationError) {
+		res.status(422).json({
+			message: error.message,
+			code: 122
+		})
 	} else {
 		res.status(HTTP_INTERNAL_SERVER_ERROR).json({
-			message: "An unknown error occurred",
+			message: "Something went wrong on the server",
 		});
 	}
 

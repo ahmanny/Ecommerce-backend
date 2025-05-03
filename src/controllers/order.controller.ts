@@ -1,16 +1,17 @@
 import { Request, RequestHandler, Response } from "express";
-import InvalidAccessCredentialsExceptions from "../exceptions/InvalidAccessCredentialsException";
 import { OrderService } from "../services/order.service";
 import { created_handler, error_handler, ok_handler } from "../utils/response_handler";
-import NotFoundException from "../exceptions/NotFoundException";
 import { Order } from "../models/orders.model";
+import UnauthorizedAccessException from "../exceptions/UnauthorizedAccessException";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
+import MissingParameterException from "../exceptions/MissingParameterException";
 
 // Create new order
 export const createNewOrder = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             if (!req.user) {
-                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+                throw new UnauthorizedAccessException("Unauthorized");
             }
             await OrderService.createNewOrderFunction(req.body, req.user._id);
             created_handler(res, "Order successfully created"); // Adjusted message
@@ -38,8 +39,9 @@ export const getUserOrders = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             if (!req.user) {
-                throw new InvalidAccessCredentialsExceptions("Unauthorized");
+                throw new UnauthorizedAccessException("Unauthorized");
             }
+
             const userId = req.user._id;
             const data = await OrderService.getAUserOrdersFunction(userId);
             ok_handler(res, "Fetched user orders successfully", data);
@@ -56,6 +58,9 @@ export const getAnOrder = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             const orderId = req.params.id;
+            if (!orderId) {
+                throw new MissingParameterException("Invalid id")
+            }
             const data = await OrderService.getOrderByIdFunction(orderId);
             ok_handler(res, "Fetched order successfully", data);
         } catch (error) {
@@ -69,9 +74,13 @@ export const updateOrder = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             const data = req.body;
-            const order = await Order.findById(req.params.id);
+            const orderId = req.params.id
+            if (!orderId) {
+                throw new MissingParameterException("Invalid id")
+            }
+            const order = await Order.findById(orderId);
             if (!order) {
-                throw new NotFoundException("Order not found");
+                throw new ResourceNotFoundException("Order not found");
             }
             await Order.findByIdAndUpdate(req.params.id, { ...data }, { new: true });
 

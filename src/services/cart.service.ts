@@ -1,9 +1,9 @@
 import { Types } from "mongoose";
 import Exception from "../exceptions/Exception";
-import NotFoundException from "../exceptions/NotFoundException";
 import { Cart } from "../models/cart.model";
-import { AddToCartInterfacePayload, CartInterfacePayload, deleteCartPayloadInterface, GetCartInterfacePayload } from "../types/cart.types";
+import { CartInterfacePayload, deleteCartPayloadInterface, GetCartInterfacePayload } from "../types/cart.types";
 import { mergeCartItems } from "../utils/cart.utils";
+import ResourceNotFoundException from "../exceptions/ResourceNotFoundException";
 
 
 
@@ -43,7 +43,7 @@ class CartServiceClass {
     public async deleteCartFunction(payload: deleteCartPayloadInterface) {
         const cart = await Cart.findOne({ user: payload.userId })
         if (!cart) {
-            throw new NotFoundException("Cart not found")
+            throw new ResourceNotFoundException("Cart not found")
         }
         const [productId, color, size] = payload.deleteId.split("-");
         cart.items = cart.items.filter((item) => !(
