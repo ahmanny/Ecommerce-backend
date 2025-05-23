@@ -49,7 +49,7 @@ export const logoutController = (): RequestHandler => {
 
 // refresh user session token controller
 export const refreshToken = (): RequestHandler => {
-    return async (req: Request, res: Response): Promise<void> => {
+    return async (req: Request, res: Response): Promise<void> => {  
 
         try {
             const { refresh_token } = req.body;

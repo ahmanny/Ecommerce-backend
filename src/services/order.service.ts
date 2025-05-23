@@ -19,18 +19,8 @@ class OrderServiceClass {
                 throw new ResourceNotFoundException(`Product with ID ${item.productId} not found`);
             }
         }
-        const orders = ensureArray(payload)
-
-        const order = await Order.findOne({ user: userId });
-        if (order) {
-            order.orders.push(...orders);
-            await order.save();
-        } else {
-            const new_order = await createOrder({ user: userId, orders: orders });
-            if (!new_order) {
-                throw new Exception("Unable to create order");
-            }
-        }
+        const newOrder = new Order({ user: userId, ...payload })
+        await newOrder.save();
 
         // Delete the cart after creating the order
         const cart = await Cart.findOne({ user: userId });
@@ -48,7 +38,14 @@ class OrderServiceClass {
 
     // Get an order by ID
     public async getOrderByIdFunction(orderId: string) {
-        const order = await Order.findById(orderId).populate("user", "name email").populate("items.productId");
+        const order = await Order.findById(orderId)
+            .populate({
+                path: 'user',
+                select: 'name email'
+            })
+            .populate({
+                path: 'items.productId',
+            })
         if (!order) {
             throw new ResourceNotFoundException("Order not found");
         }
@@ -59,18 +56,13 @@ class OrderServiceClass {
     // Get a user's orders
     public async getAUserOrdersFunction(userId: string) {
 
-        let userOrders = await Order.findOne({ user: userId }).populate({
-            path: "orders.items.productId",
-            select: "title price images", // adjust fields based on your Product model
-        });
-
-        // if the user doesn't have any orders, create an empty order
+        let userOrders = await Order.find({ user: userId })
+            .populate({
+                path: "items.productId",
+                select: "title price images",
+            });
         if (!userOrders) {
-            userOrders = await Order.create({ user: userId, orders: [] })
-        }
-        // const order = await Order.findOne({ user: userId }).populate("order.items.productId");
-        if (!userOrders) {
-            throw new ResourceNotFoundException("No orders found on thi account");
+            throw new ResourceNotFoundException("You have not placed any orders");
         }
         return { userOrders };
     }
@@ -86,7 +78,14 @@ class OrderServiceClass {
 
     // Get all orders
     public async getAllOrdersFunction() {
-        const orders = await Order.find().populate("user", "name email").populate("order.items.productId");
+        const orders = await Order.find()
+            .populate({
+                path: 'user',
+                select: 'name email'
+            })
+            .populate({
+                path: 'items.productId',
+            });
         return orders;
     }
 }

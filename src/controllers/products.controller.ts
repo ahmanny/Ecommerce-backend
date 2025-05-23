@@ -99,7 +99,7 @@ export const getAProduct = (): RequestHandler => {
     }
 }
 
-// delete order controller
+// delete Product controller
 export const deleteProduct = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {

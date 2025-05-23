@@ -22,8 +22,8 @@ class ReviewServiceClass {
 
         const hasPurchased = await Order.exists({
             user: userId,
-            'orders.order_status': 'delivered',
-            'orders.items.productId': payload.product
+            'order_status': 'delivered',
+            'items.productId': payload.product
         });
 
         // Create new review document
@@ -79,7 +79,7 @@ class ReviewServiceClass {
         return { review };
     }
 
-    // Get all orders
+    // Get all reviews
     public async getAllReviews() {
         const reviews = await Review.find()
             .populate('user', 'name email')         // Add user info

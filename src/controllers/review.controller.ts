@@ -29,7 +29,7 @@ export const getAllReviews = (): RequestHandler => {
     return async (req: Request, res: Response): Promise<void> => {
         try {
             const data = await ReviewService.getAllReviews();
-            ok_handler(res, "Fetched orders successfully", data);
+            ok_handler(res, "Fetched Reviews successfully", data);
         } catch (error) {
             console.log(error);
             error_handler(error, req, res);
@@ -69,7 +69,7 @@ export const getUserReviews = (): RequestHandler => {
             }
             const userId = req.user._id;
             const data = await ReviewService.getUserReviews(userId);
-            ok_handler(res, "Fetched user orders successfully", data);
+            ok_handler(res, "Fetched user Reviews successfully", data);
         } catch (error) {
             console.log(error);
             error_handler(error, req, res);
@@ -90,7 +90,7 @@ export const getReview = (): RequestHandler => {
                 throw new MissingParameterException("Review Id is missing")
             }
             const data = await ReviewService.getReviewById(reviewId);
-            ok_handler(res, "Fetched order successfully", data);
+            ok_handler(res, "Fetched Reviews successfully", data);
         } catch (error) {
             console.log(error);
             error_handler(error, req, res);
@@ -112,7 +112,7 @@ export const deleteReview = (): RequestHandler => {
                 throw new MissingParameterException("Review Id is missing")
             }
             await ReviewService.deleteReviewFunction(reviewId);
-            ok_handler(res, "Order successfully deleted");
+            ok_handler(res, "Review successfully deleted");
         } catch (error) {
             console.log(error);
             error_handler(error, req, res);

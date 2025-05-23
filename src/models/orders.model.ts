@@ -16,15 +16,12 @@ export interface IOrderSummary {
     total: number;
 }
 export interface IOrder {
+    user: Types.ObjectId;
     items: ICartItem[];
     shippingDetails: IShippingDetails
     summary: IOrderSummary
     payment_status: "pending" | "paid" | "failed"
     order_status: "pending" | "processing" | "shipped" | "delivered" | "canceled";
-}
-export interface IUserOrder {
-    user: Types.ObjectId;
-    orders: IOrder[];
 }
 // schemas
 export const ShippingDetailsSchema = new Schema<IShippingDetails>({
@@ -45,6 +42,7 @@ const OrderSummarySchema = new Schema<IOrderSummary>({
 });
 
 const OrderSchema = new Schema<IOrder>({
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     items: [CartItemSchema],
     shippingDetails: ShippingDetailsSchema,
     summary: OrderSummarySchema,
@@ -61,12 +59,8 @@ const OrderSchema = new Schema<IOrder>({
 
 }, { timestamps: true });
 
-const UserOrderSchema = new Schema<IUserOrder>({
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    orders: [OrderSchema],
-}, { timestamps: true });
 
-export const Order = model<IUserOrder>('Order', UserOrderSchema);
+export const Order = model<IOrder>('Order', OrderSchema);
 
 
 

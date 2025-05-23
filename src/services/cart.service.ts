@@ -34,7 +34,7 @@ class CartServiceClass {
 
     // get user carts
     public async getUserCartsFunction(payload: GetCartInterfacePayload) {
-        const cart = await Cart.findOne({ user: payload.userId }).populate("items.productId");
+        const cart = await Cart.findOne({ user: payload.userId }).populate("items.productId", "images price title");
         return {
             cart
         }
@@ -48,7 +48,7 @@ class CartServiceClass {
         const [productId, color, size] = payload.deleteId.split("-");
         cart.items = cart.items.filter((item) => !(
             item.productId.equals(productId) &&
-            item.color === color &&
+            item.color === color && 
             item.size === size
         )
         )

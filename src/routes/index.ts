@@ -8,6 +8,7 @@ import { cart } from './carts.routes';
 import { wishlist } from './wishlist.routes';
 import { category } from './categories.routes';
 import { review } from './review.routes';
+import { admin } from './admin.routes';
 
 const routes = Router();
 const userMiddleware = new UserMiddleware();
@@ -27,6 +28,7 @@ routes.use('/review', review)
 
 // authentication required
 routes.use(userMiddleware.validateToken)
+routes.use('/admin', admin);
 routes.use('/order', order);
 routes.use('/cart', cart)
 routes.use('/wishlist', wishlist)
