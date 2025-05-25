@@ -5,7 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "build": "rimraf dist && env && npx tsc",
+    "build": "rimraf dist && npx tsc",
     "start": "npm run build && node dist/index.js",
     "dev": "npx nodemon"
   },
@@ -50,6 +50,6 @@
     "nodemon": "^3.0.1",
     "rimraf": "^5.0.4",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   }
 }
